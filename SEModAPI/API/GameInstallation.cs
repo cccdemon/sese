@@ -281,12 +281,25 @@ namespace SEModAPI.API
 
 		private static string GetServiceInstallPath( string serviceName )
 		{
-			RegistryKey regkey = Registry.LocalMachine.OpenSubKey( string.Format( @"SYSTEM\CurrentControlSet\services\{0}", serviceName ) );
 
-			return regkey.GetValue( "ImagePath" ) == null ? "Not Found" : regkey.GetValue( "ImagePath" ).ToString( );
-		}
+            if (serviceName != "silsvc")
+            {
 
-		public static List<string> GetCommonInstanceList( )
+                try
+                {
+                    RegistryKey regkey = Registry.LocalMachine.OpenSubKey(string.Format(@"SYSTEM\CurrentControlSet\services\{0}", serviceName), false);
+                    return regkey.GetValue("ImagePath") == null ? "Not Found" : regkey.GetValue("ImagePath").ToString();
+                }
+                catch (Exception)
+                {
+                    Console.WriteLine("Exception catched");
+                }
+
+            }
+            return null;
+        }
+
+        public static List<string> GetCommonInstanceList( )
 		{
 			if(string.IsNullOrEmpty( MyPerServerSettings.GameDSName ))
 				SpaceEngineersGame.SetupPerGameSettings( );
@@ -304,10 +317,15 @@ namespace SEModAPI.API
 			List<string> result = new List<string>( );
 			try
 			{
+        
 				foreach ( ServiceController s in ServiceController.GetServices( ) )
 				{
-					string path = GetServiceInstallPath( s.ServiceName );
-					if ( path.IndexOf( exeName, StringComparison.InvariantCultureIgnoreCase ) != -1 )
+	      
+ 				string path = GetServiceInstallPath( s.ServiceName );
+        if (path == null)
+                 continue;
+        System.Console.WriteLine("ServiceName = " + path);
+          if ( path.IndexOf( exeName, StringComparison.InvariantCultureIgnoreCase ) != -1 )
 					{
 						BaseLog.Trace( "Adding {0} to instance list", s.ServiceName );
 						result.Add( s.ServiceName );
